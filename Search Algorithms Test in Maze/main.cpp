@@ -43,8 +43,9 @@ int main() {
 						 std::cout << "Map loaded successfully, with " << test_map.h << " rows and " << test_map.w << " columns.\n"; map_loaded = true; }
 					else std::cout << "Map could not be loaded. Please verify the file exists.\n"; 
 					break;
-			case 5: if (test_map.save_map(string_prompt("Input the name of the file the map will be saved in ==> ")))
-						 std::cout << "Map saved succesfully.";
+			case 5: if (map_loaded && test_map.save_map(string_prompt("Input the name of the file the map will be saved in ==> ")))
+						std::cout << "Map saved succesfully.";
+					else if (!map_loaded) std::cout << "There is no map to save into an external file.\n";
 					else std::cout << "Map could not be saved.\n"; 
 					break;
 			case 6: std::cout << "Are you sure you want to delete the current map? Y/N\n"; 
@@ -55,9 +56,7 @@ int main() {
 			case 8: CLEAR_SCREEN; break;
 			case 9: program_should_exit = true; break;
 		}
-		std::cout << "\nPress Enter to continue.\n";
-		std::cin.ignore();
-		std::cout << "-----------------------------------------------------------------------------------------------\n";
+		wait_key();
 	}
 	std::cout << "Thanks for using our sim!\n";
 	return 0;

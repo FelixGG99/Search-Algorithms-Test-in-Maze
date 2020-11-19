@@ -10,7 +10,7 @@
 #if		defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) || defined(__WINDOWS__)
 #include <Windows.h>
 #define CLEAR_SCREEN std::system("cls")
-
+#define sleep_ Sleep
 #define conBLACK			0
 #define conBLUE				1
 #define conGREEN			2
@@ -47,10 +47,46 @@ void set_text_color(const int color) {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
 
+void clear_from(int x, int y) {
+	// Check for double buffering using a CreateConsoleScreenBuffer.
+	// https://docs.microsoft.com/en-us/windows/console/writeconsoleoutput
+	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
+	HANDLE hStd = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (!GetConsoleScreenBufferInfo(hStd, &screenBufferInfo))
+		printf("GetConsoleScreenBufferInfo (%d)\n", GetLastError());
+	int size_x = screenBufferInfo.dwSize.X;
+	int size_y = screenBufferInfo.dwSize.Y;
+
+	CHAR_INFO* clearRect = new CHAR_INFO[((size_y - y) + 1) * ((size_x - x) + 1)]{ ' ' };
+
+	SMALL_RECT srctWriteRect;
+	COORD coordBufSize;
+	COORD coordBufCoord;
+
+	srctWriteRect.Left = x;
+	srctWriteRect.Top = y;
+	srctWriteRect.Right = size_x - 1;
+	srctWriteRect.Bottom = size_y - 1;
+
+	coordBufSize.X = size_y - y;
+	coordBufSize.Y = size_x - x;
+
+	coordBufCoord.X = 0;
+	coordBufCoord.Y = 0;
+
+	WriteConsoleOutput(hStd, clearRect, coordBufSize, coordBufCoord, &srctWriteRect);
+}
+
 #else
 #include <unistd.h>
 #define CLEAR_SCREEN std::system("clear")
 #endif
+
+inline void wait_key() {
+	std::cout << "\nPress Enter to continue.\n";
+	std::cout << "-----------------------------------------------------------------------------------------------\n";
+	std::cin.ignore();
+}
 
 const int int_prompt(const std::string& prompt, const std::string &invalid_msg) {
 	int p;

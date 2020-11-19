@@ -26,17 +26,21 @@ public:
 	std::pair<int, int>	search_point(char c);
 };
 
+void set_char_color(char c) {
+
+	switch (c) {
+	case '#': set_text_color(conBROWN); break;
+	case 'S': set_text_color(conYELLOW); break;
+	case 'X': set_text_color(conLIGHTGREEN); break;
+	case '.': set_text_color(conWHITE); break;
+	}
+}
+
 void maze::print_map() {
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
-			char val = map[i * w + j];
-			switch (val) {
-				case '#': set_text_color(conBROWN); break;
-				case 'S': set_text_color(conYELLOW); break;
-				case 'X': set_text_color(conLIGHTGREEN); break;
-				case '.': set_text_color(conWHITE); break;
-			}
-			std::cout << val;
+			set_char_color(map[i * w + j]);
+			std::cout << map[i * w + j];
 		}
 		set_text_color(conWHITE);
 		std::cout << "\n";
@@ -57,7 +61,6 @@ void maze::print_map_ruler() {
 }
 
 void maze::show_layout_info() {
-	std::cout << "\n\t\tCurrent Maze Layout:\n\t\t-------------------\n\n";
 	print_map();
 	std::cout << "\n\n";
 	std::cout << "Numeration of each position begins in the upper-left corner on the map, in (0,0),\nand ends in the lower-right corner, in (w-1, h-1). The notation used is (column, row).\n";
