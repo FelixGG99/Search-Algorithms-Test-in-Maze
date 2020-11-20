@@ -26,16 +26,6 @@ public:
 	std::pair<int, int>	search_point(char c);
 };
 
-void set_char_color(char c) {
-
-	switch (c) {
-	case '#': set_text_color(conBROWN); break;
-	case 'S': set_text_color(conYELLOW); break;
-	case 'X': set_text_color(conLIGHTGREEN); break;
-	case '.': set_text_color(conWHITE); break;
-	}
-}
-
 void maze::print_map() {
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {

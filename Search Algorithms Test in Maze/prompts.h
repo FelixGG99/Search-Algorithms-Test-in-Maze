@@ -47,13 +47,15 @@ void set_text_color(const int color) {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
 
-void clear_from(int x, int y) {
+int clear_from(int x, int y) {
 	// Check for double buffering using a CreateConsoleScreenBuffer.
 	// https://docs.microsoft.com/en-us/windows/console/writeconsoleoutput
 	CONSOLE_SCREEN_BUFFER_INFO screenBufferInfo;
 	HANDLE hStd = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (!GetConsoleScreenBufferInfo(hStd, &screenBufferInfo))
+	if (!GetConsoleScreenBufferInfo(hStd, &screenBufferInfo)) {
 		printf("GetConsoleScreenBufferInfo (%d)\n", GetLastError());
+		return 0;
+	}
 	int size_x = screenBufferInfo.dwSize.X;
 	int size_y = screenBufferInfo.dwSize.Y;
 
@@ -75,6 +77,38 @@ void clear_from(int x, int y) {
 	coordBufCoord.Y = 0;
 
 	WriteConsoleOutput(hStd, clearRect, coordBufSize, coordBufCoord, &srctWriteRect);
+	delete[] clearRect;
+	return 1;
+}
+
+int scroll_up_to(int x, int y) {
+	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+	SMALL_RECT srctWindow;
+
+	if (!GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbiInfo)){
+		std::cout << "GetConsoleScreenBufferInfo (" << GetLastError() << ")\n";
+		return 0;
+	}
+
+	srctWindow = csbiInfo.srWindow;
+	int iRows =  srctWindow.Top - y;	
+
+	if (iRows >= 0) {
+		srctWindow.Top -= (SHORT)iRows;     // move top up
+		srctWindow.Bottom -= (SHORT)iRows;  // move bottom up
+
+		if (!SetConsoleWindowInfo(
+			GetStdHandle(STD_OUTPUT_HANDLE),          // screen buffer handle
+			TRUE,             // absolute coordinates
+			&srctWindow))     // specifies new location
+		{
+			std::cout << "SetConsoleWindowInfo (" << GetLastError() << ")\n";
+			return 0;
+		}
+		return iRows;
+	}
+	else return 0;
+
 }
 
 #else
@@ -86,6 +120,16 @@ inline void wait_key() {
 	std::cout << "\nPress Enter to continue.\n";
 	std::cout << "-----------------------------------------------------------------------------------------------\n";
 	std::cin.ignore();
+}
+
+void set_char_color(char c) {
+
+	switch (c) {
+	case '#': set_text_color(conBROWN); break;
+	case 'S': set_text_color(conYELLOW); break;
+	case 'X': set_text_color(conLIGHTGREEN); break;
+	case '.': set_text_color(conWHITE); break;
+	}
 }
 
 const int int_prompt(const std::string& prompt, const std::string &invalid_msg) {
@@ -130,6 +174,7 @@ const std::string string_prompt(const std::string& prompt) {
 	std::string input = "";
 	std::cout << prompt;
 	std::cin >> input;
+	std::cin.ignore();
 	return input;
 }
 
@@ -152,6 +197,8 @@ const int y_n_prompt(const std::string& prompt, const std::string& invalid_msg) 
 void info() {
 	set_text_color(conYELLOW);
 	std::cout << "\n";
+	int scr_px, scr_py;
+	wherexy(scr_px, scr_py);
 	std::cout << "\t\t////////////////////////////\n";
 	std::cout << "\t\t//   ABOUT THIS PROJECT   //\n";
 	std::cout << "\t\t////////////////////////////\n";
@@ -167,6 +214,27 @@ void info() {
 	std::cout << "Cindy, [matricula]\n\n";
 	std::cout << "Version\t\t: 1.0\n";
 	std::cout << "Last Updated\t: 18/11/2020\n";
+	scroll_up_to(scr_px, scr_py);
+}
+
+void help() {
+	std::cout << "\n";
+	int scr_px, scr_py;
+	wherexy(scr_px, scr_py);
+	set_text_color(conYELLOW);
+	std::cout << "\t\t////////////////////////////\n";
+	std::cout << "\t\t/////   HELP SECTION   /////\n";
+	std::cout << "\t\t////////////////////////////\n\n\n";
+	set_char_color('.');
+	std::cout << "[.] -----> Free space. Possible to move through these spaces.\n";
+	set_char_color('#');
+	std::cout << "[#] -----> Obstacle. Impossible to move through these spaces.\n";
+	set_char_color('S');
+	std::cout << "[S]-----> Starting point. This is where the search starts from.\n";
+	set_char_color('X');
+	std::cout << "[X] -----> Goal point. The objective of the search is to reach this point from the starting point.\n";
+	set_text_color(conWHITE);
+	scroll_up_to(scr_px, scr_py);
 }
 
 #endif // PROMPTS_H
