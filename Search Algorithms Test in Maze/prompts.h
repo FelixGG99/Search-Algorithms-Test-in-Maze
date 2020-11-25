@@ -4,8 +4,11 @@
 
 #include <iostream>
 #include <stdlib.h>
+#include <vector>
+#include <algorithm>
 
-#define NOT_VALID_INT -2147483648
+#define NOT_VALID_INT -214748364
+#define NOT_VALID_INT2 214748364
 
 #if		defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__TOS_WIN__) || defined(__WINDOWS__)
 #include <Windows.h>
@@ -43,8 +46,8 @@ void wherexy(int& x, int& y) {
 	y = screenBufferInfo.dwCursorPosition.Y;
 }
 
-void set_text_color(const int color) {
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+int set_text_color(const int color) {
+	return SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
 }
 
 int clear_from(int x, int y) {
@@ -116,6 +119,38 @@ int scroll_up_to(int x, int y) {
 #define CLEAR_SCREEN std::system("clear")
 #endif
 
+void error_msg(const char* msg) {
+	int oc = set_text_color(conRED);
+	std::cout << ">> ×\t" << " ERROR:\t\t";
+	set_text_color(conLIGHTRED);
+	std::cout << msg << "\n";
+	set_text_color(conWHITE);
+}
+
+void info_msg(const char* msg) {
+	set_text_color(conBLUE);
+	std::cout << ">> (i)\t" << " INFO:\t\t";
+	set_text_color(conLIGHTBLUE);
+	std::cout << msg << "\n";
+	set_text_color(conWHITE);
+}
+// 
+void warn_msg(const char* msg) {
+	int oc = set_text_color(conBROWN);
+	std::cout << ">> !\t" << " WARNING:\t\t";
+	set_text_color(conYELLOW);
+	std::cout << msg << "\n";
+	set_text_color(conWHITE);
+}
+
+void succ_msg(const char* msg) {
+	int oc = set_text_color(conGREEN);
+	std::cout << ">> (OK)\t" << " SUCCESS:\t";
+	set_text_color(conLIGHTGREEN);
+	std::cout << msg << "\n";
+	set_text_color(conWHITE);
+}
+
 inline void wait_key() {
 	std::cout << "\nPress Enter to continue.\n";
 	std::cout << "-----------------------------------------------------------------------------------------------\n";
@@ -132,41 +167,54 @@ void set_char_color(char c) {
 	}
 }
 
-const int int_prompt(const std::string& prompt, const std::string &invalid_msg) {
+const int int_prompt(const char* prompt, const char* invalid_msg) {
 	int p;
 	char* endchar;
 	std::string input;
+	int x, y;
+	wherexy(x, y);
 	do {
 		std::cout << prompt;
 		std::cin >> input;
+		std::cin.ignore(INT_MAX, '\n');
 		p = strtol(input.c_str(), &endchar, 0);
 		if (*endchar) {
-			std::cout << invalid_msg << "\n";
+			error_msg(invalid_msg);
 			p = NOT_VALID_INT;
+			wait_key();
+			gotoxy(x, y);
+			clear_from(x, y);
 		}
 	} while (p == NOT_VALID_INT);
-	std::cin.ignore(INT_MAX, '\n');
 	return p;
 }
 
-const int int_prompt_bounds(const std::string& prompt, const std::string& invalid_msg1, int lb, int ub, const std::string& invalid_msg2) {
+const int int_prompt_bounds(const char* prompt, const char *invalid_msg1, int lb, int ub, const char* invalid_msg2) {
 	int p;
 	char* endchar;
 	std::string input;
+	int x, y;
+	wherexy(x, y);
 	do {
 		std::cout << prompt;
 		std::cin >> input;
+		std::cin.ignore(INT_MAX, '\n');
 		p = strtol(input.c_str(), &endchar, 0);
 		if (*endchar) {
-			std::cout << invalid_msg1 << "\n";
+			error_msg(invalid_msg1);
 			p = NOT_VALID_INT;
+			wait_key();
+			gotoxy(x, y);
+			clear_from(x, y);
 		}
 		else if (p < lb || p > ub) {
-			std::cout << invalid_msg2 << "\n";
+			error_msg(invalid_msg2);
 			p = NOT_VALID_INT;
+			wait_key();
+			gotoxy(x, y);
+			clear_from(x, y);
 		}
 	} while (p == NOT_VALID_INT);
-	std::cin.ignore(INT_MAX, '\n');
 	return p;
 }
 
@@ -180,18 +228,102 @@ const std::string string_prompt(const std::string& prompt) {
 
 const int y_n_prompt(const std::string& prompt, const std::string& invalid_msg) {
 	char p = 0;
-	
+	int x, y;
+	wherexy(x, y);
 	do {
 		std::cout << prompt;
 		std::cin >> p;
+		std::cin.ignore(INT_MAX, '\n');
 		p = toupper(p);
 		if (p != 'Y' && p != 'N') {
 			std::cout << invalid_msg << "\n";
 			p = 0;
+			wait_key();
+			gotoxy(x, y);
+			clear_from(x, y);
 		}
 	} while (!p);
-	std::cin.ignore(INT_MAX, '\n');
 	return p == 'Y' ? 1 : 0;
+}
+
+void title1(const std::string& s, const int text_color, const int border_color) {
+	/*
+		*****************************
+		|                           |
+		*****************************
+	*/
+
+	std::vector<std::string>lines;
+	int max_len = 0;
+
+	for (int it = 0; it < s.length();) {
+		auto pos = s.find(it, '\n');
+		if (pos == s.npos) pos = s.length() - 1;
+		int len = pos - it;
+		if (len > max_len) max_len = len;
+		lines.push_back(s.substr(it, len));
+		it = pos + 1;
+	}
+
+	int l = max_len + 6;
+
+	int orig_color = set_text_color(border_color);
+	for (int i = 0; i < l + 2; i++) std::cout << '*';
+	for (int i = 0; i < lines.size(); i++) {
+		std::cout << '|';
+		int padding_size = l - lines[i].length();
+		for (int j = 0; j < padding_size / 2; j++) std::cout << ' ';
+		set_text_color(text_color);
+		std::cout << lines[i];
+		set_text_color(border_color);
+		if (!padding_size % 2) std::cout << " ";
+		for (int j = 0; j < padding_size / 2; j++) std::cout << ' ';
+		std::cout << "|\n";
+	}
+	for (int i = 0; i < l + 2; i++) std::cout << '*';
+	set_text_color(orig_color);
+}
+
+void title2(const std::string& s, const int text_color, const int border_color) {
+	/*
+		°===========================°
+		|                           |
+		°===========================°
+	*/
+
+	std::vector<std::string>lines;
+	int max_len = 0;
+
+	for (int it = 0; it < s.length();) {
+		auto pos = s.find(it, '\n');
+		if (pos == s.npos) pos = s.length() - 1;
+		int len = pos - it;
+		if (len > max_len) max_len = len;
+		lines.push_back(s.substr(it, len+1));
+		it = pos + 1;
+	}
+	max_len++;
+	int l = max_len + 6;
+
+	int orig_color = set_text_color(border_color);
+	std::cout << '°';
+	for (int i = 0; i < l; i++) std::cout << '=';
+	std::cout << "°\n";
+	for (int i = 0; i < lines.size(); i++) {
+		std::cout << '|';
+		int padding_size = l - lines[i].length();
+		for (int j = 0; j < padding_size / 2; j++) std::cout << ' ';
+		set_text_color(text_color);
+		std::cout << lines[i];
+		set_text_color(border_color);
+		if (!padding_size % 2) std::cout << " ";
+		for (int j = 0; j < padding_size / 2; j++) std::cout << ' ';
+		std::cout << "|\n";
+	}
+	std::cout << '°';
+	for (int i = 0; i < l; i++) std::cout << '=';
+	std::cout << "°\n";
+	set_text_color(orig_color);
 }
 
 void info() {
