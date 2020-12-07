@@ -81,6 +81,8 @@ int build_map(maze &m, bool &map_loaded) {
 	// if a map is not loaded/ does not exist on the program...
 	if (!map_loaded) {
 		// ask for dimensions of the map to be created
+		std::cout << "Size of map is limitless. However, the larger the map is, the longer a search will take,\nand, depending on the size of the console window, the map will appaer distorted.\n";
+		std::cout << "For that reason, the limit of the size of the map should be given by the size of the window.\n";
 		std::cout << "Input the width of the map (how many columns) .\n";
 		m.w = int_prompt("\t==> ", "Please, input only numeric values.");
 		std::cout << "Input the height of the map (how many rows).\n";
